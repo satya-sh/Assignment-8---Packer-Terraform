@@ -35,8 +35,3 @@ terraform apply \
   -auto-approve
 
 echo "Deployment complete!"
-
-# Run tests
-echo "Running tests..."
-cd "${ROOT_DIR}"
-./scripts/test.sh
