@@ -201,17 +201,26 @@ If you see `Operation timed out` or `Permission denied`, ensure:
 
 ---
 
+Here's the updated section for viewing AWS resources on the dashboard:
+
 ### 6. View AWS Resources on Dashboard
 
-- **Output1.jpg** / **Output2.jpg** / **Output3.jpg** / **Output4.jpg** / **Output7.jpg** – These screenshots show the AWS resources created in the AWS Management Console dashboard, including:
-  - EC2 instances (bastion and private instances)
-  - Elastic IP Address (Bastion)
-  - Volumes
-  - Snapshot
-  - AMI
+* **Output1.jpg** – Shows the EC2 instances (bastion and private instances) created in AWS Management Console.  
+  ![EC2 Instances](Images/Output1.jpg)
+
+* **Output2.jpg** – Shows the Elastic IP Address allocated for the Bastion host.  
+  ![Elastic IP](Images/Output2.jpg)
+
+* **Output3.jpg** – Shows the EBS Volumes attached to the instances.  
+  ![Volumes](Images/Output3.jpg)
+
+* **Output4.jpg** – Shows the Snapshots created during the deployment process.  
+  ![Snapshots](Images/Output4.jpg)
+
+* **Output7.jpg** – Shows the custom AMI built with Packer that contains Docker.  
+  ![Custom AMI](Images/Output7.jpg)
 
 These images provide visual confirmation that our resources were successfully deployed in the AWS environment.
-
 ---
 
 ### 7. Destroying Resources
