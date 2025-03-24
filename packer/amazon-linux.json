@@ -1,0 +1,33 @@
+{
+    "variables": {
+      "aws_access_key": "{{env `AWS_ACCESS_KEY`}}",
+      "aws_secret_key": "{{env `AWS_SECRET_KEY`}}",
+      "aws_session_token": "{{env `AWS_SESSION_TOKEN`}}",
+      "region": "{{env `AWS_REGION`}}",
+      "ssh_public_key": "{{env `SSH_PUBLIC_KEY`}}",
+      "source_ami": "ami-08b5b3a93ed654d19",
+      "instance_type": "t2.micro",
+      "ssh_username": "ec2-user",
+      "ami_prefix": "custom-amazon-linux-docker"
+    },
+    "builders": [
+      {
+        "type": "amazon-ebs",
+        "access_key": "{{user `aws_access_key`}}",
+        "secret_key": "{{user `aws_secret_key`}}",
+        "token": "{{user `aws_session_token`}}",
+        "region": "{{user `region`}}",
+        "source_ami": "{{user `source_ami`}}",
+        "instance_type": "{{user `instance_type`}}",
+        "ssh_username": "{{user `ssh_username`}}",
+        "ami_name": "{{user `ami_prefix`}}-{{timestamp}}"
+      }
+    ],
+    "provisioners": [
+      {
+        "type": "shell",
+        "script": "../scripts/install_docker.sh",
+        "environment_vars": ["SSH_PUBLIC_KEY={{user `ssh_public_key`}}"]
+      }
+    ]
+  }
