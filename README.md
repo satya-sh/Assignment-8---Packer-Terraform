@@ -1,258 +1,247 @@
-# Assignment-8---Packer-Terraform
-
-This repository automates the creation of an AWS environment using:
-1. **Packer** to build a custom Amazon Linux AMI with Docker installed.
-2. **Terraform** to provision a VPC, a bastion host, and several private EC2 instances using that AMI.
-3. **Shell scripts** to streamline building, deploying, testing, and destroying the environment.
+Below is a **comprehensive README.md** that references **every screenshot** you listed. Adjust any file paths or screenshot names if they differ in your actual directory structure.
 
 ---
 
-## Repository Structure
+# AWS Infrastructure with Custom AMI and Terraform Provisioning
+
+This repository provides a complete end-to-end demonstration of creating AWS infrastructure via **Terraform** and then configuring EC2 instances using **Ansible**. The infrastructure comprises:
+
+- **1 Bastion Host** (Amazon Linux) that doubles as the Ansible Controller  
+- **6 Private EC2 Instances** (3 Ubuntu, 3 Amazon Linux)
+
+After infrastructure creation, Ansible:
+- Updates and upgrades packages (apt on Ubuntu, yum on Amazon Linux)
+- Installs and starts the latest Docker
+- Displays Docker version
+- Reports disk usage (via `df -h`)
+
+---
+
+## 1. Overview of the Project
+
+### Terraform
+
+- **VPC** with public and private subnets
+- **NAT Gateway** and route tables for outbound access
+- **Security Groups** restricting SSH to your IP for the bastion and private traffic for the instances
+- **Bastion Host** in a public subnet (accessible only from your IP on port 22)
+- **6 Private EC2 instances** (3 Ubuntu, 3 Amazon Linux), each tagged accordingly
+
+### Ansible
+
+- Dynamically discovers the 6 private instances using the AWS EC2 inventory plugin
+- Updates packages, installs Docker, verifies Docker version, and prints disk usage
+
+![Directory Structure](Images/Diectory_Structure.jpg)
+
+---
+
+## 2. Repository Structure
 
 ```
 .
 ├── Images/
-│   ├── Output1.jpg
-│   ├── Output2.jpg
-│   ├── Output3.jpg
-│   ├── Output4.jpg
-│   ├── Output7.jpg
-│   ├── Packer1.jpg
-│   ├── Packer2.jpg
-│   ├── TerraApply1.jpg
-│   ├── TerraInit1.jpg
-│   ├── TerraPlan1.jpg
-│   ├── TerraPlan2.jpg
-│   ├── TerraPlan3.jpg
-│   ├── TerraPlan4.jpg
-│   └── Tests.jpg
-├── README.md
-├── build_ami.sh
-├── deploy.sh
-├── deploy_infra.sh
-├── packer/
-│   ├── amazon-linux.json
+│   ├── All_Instances.jpg
+│   ├── Ansible_Play_ Recap.jpg
+│   ├── Diectory_Structure.jpg
+│   ├── Disk_Usage_EC2s.jpg
+│   ├── Elastic_IP.jpg
+│   ├── Install_Docker_EC2.jpg
+│   ├── Installing_Ansible_Host.jpg
+│   ├── Key_help.jpg
+│   ├── Security_Groups.jpg
+│   ├── Starting_Ansible_PlayandUpdate_Packages_EC2s.jpg
+│   ├── Terraform_Apply1.jpg
+│   ├── Terraform_Apply2.jpg
+│   ├── Terraform_Init.jpg
+│   ├── Terraform_Plan1.jpg
+│   ├── Terraform_Plan2.jpg
+│   ├── Terraform_Plan3.jpg
+│   ├── Terraform_Plan4.jpg
+│   ├── Terraform_Plan5.jpg
+│   └── Volumes.jpg
+├── ansible/
+│   ├── ansible.cfg
+│   ├── aws_ec2.yml
+│   ├── group_vars/
+│   │   ├── os_amazon.yml
+│   │   └── os_ubuntu.yml
+│   └── playbook.yml
 ├── scripts/
 │   ├── destroy.sh
-│   ├── install_docker.sh
-│   └── test.sh
-└── terraform/
-    ├── main.tf
-    ├── outputs.tf
-    ├── variables.tf
-    └── versions.tf
+│   ├── install_ansible.sh
+│   └── run_ansible.sh
+├── terraform/
+│   ├── main.tf
+│   ├── outputs.tf
+│   ├── variables.tf
+│   └── versions.tf
+├── run_now.sh
+├── labsuser.pem  (not typically committed)
+├── .env          (not typically committed)
+└── README.md      (this file)
 ```
 
-1. **Images/** – Folder containing all my screenshots.  
-2. **build_ami.sh** – Builds the custom AMI with Packer.  
-3. **deploy_infra.sh** – Deploys the AWS infrastructure with Terraform.  
-4. **deploy.sh** – A convenience script that calls both `build_ami.sh` and `deploy_infra.sh`.  
-5. **scripts/** – Additional scripts:
-   - **destroy.sh** – Destroys all Terraform-managed infrastructure.
-   - **install_docker.sh** – Installs Docker (called during Packer build).
-   - **test.sh** – SSH test script to confirm access to bastion and private instances.
-6. **packer/** – Packer templates (i.e., `amazon-linux.json`).  
-7. **terraform/** – Terraform configuration files (`main.tf`, `outputs.tf`, `variables.tf`, etc.).  
+> **Note**:  
+> - The `.env` file holds your AWS credentials and path to your SSH key.  
+> - `labsuser.pem` is your private key for SSH (do **not** commit it).  
+> - The screenshots shown above reside in the `Images` folder.
 
 ---
 
-## Prerequisites
+## 3. Prerequisites
 
-1. **Install Packer and Terraform** (for macOS users with Homebrew):
+1. **AWS Credentials** (Access Key, Secret Key, Session Token if required)  
+2. **Terraform** (v1.3+ recommended)  
+3. **SSH Key** (`labsuser.pem`) with correct permissions (e.g., `chmod 400 labsuser.pem`)  
+4. **(Optional) Ansible** installed locally if you’d like, but the scripts will install Ansible on the bastion host automatically.
+
+---
+
+## 4. Setup Instructions
+
+### 4.1 Create and Source Your `.env` File
+
+1. **Clone** this repository (switch to your assignment branch if needed):
    ```bash
-   brew tap hashicorp/tap
-   brew install hashicorp/tap/terraform
-   brew install hashicorp/tap/packer
+   git clone -b assignment10 https://github.com/<YOUR_USERNAME>/<YOUR_REPO>.git
+   cd <YOUR_REPO>
    ```
 
-2. **AWS Credentials** (environment variables stored in your AWS CLI config).  
+2. **Create a `.env`** file in the root folder with your AWS credentials and the path to your SSH key:
 
-3. **Packer** installed (v1.8+ recommended).  
+   ```bash
+   # .env
+   export AWS_ACCESS_KEY="YOUR_ACCESS_KEY"
+   export AWS_SECRET_KEY="YOUR_SECRET_KEY"
+   export AWS_SESSION_TOKEN="YOUR_SESSION_TOKEN"   # If applicable
+   export AWS_REGION="us-east-1"
+   export SSH_KEY_PATH="/absolute/path/to/labsuser.pem"
+   ```
 
-4. **Terraform** installed (v1.3+ recommended).  
-
-5. **bash** shell to run the provided scripts (Linux, macOS, or a Cloud9 environment).
+3. **Make scripts executable** (on Linux/macOS):
+   ```bash
+   chmod +x run_now.sh
+   chmod +x scripts/*.sh
+   ```
 
 ---
 
-## Step-by-Step Guide
+### 4.2 Run the Main Script
 
-Below is a walkthrough of the deployment process. The referenced images illustrate various outputs and confirmations.
+Run the `run_now.sh` script to:
 
-### 1. Configure AWS Credentials
-
-Create (or update) a `.env` file in the project root. For example:
+1. **Initialize and apply Terraform** (creating VPC, subnets, bastion, private instances)
+2. **Install Ansible** on the bastion host
+3. **Run the Ansible playbook** to set up Docker and display disk usage
 
 ```bash
-export AWS_ACCESS_KEY_ID="YOUR_ACCESS_KEY"
-export AWS_SECRET_ACCESS_KEY="YOUR_SECRET_KEY"
-export AWS_SESSION_TOKEN="YOUR_SESSION_TOKEN"
-export AWS_DEFAULT_REGION="us-east-1"
+./run_now.sh
 ```
 
-Then run:
+#### Terraform in Action
 
-```bash
-source .env
-```
+1. **Terraform Init**  
+   ![Terraform Init](Images/Terraform_Init.jpg)
+
+2. **Terraform Plan**  
+   ![Terraform Plan1](Images/Terraform_Plan1.jpg)  
+   ![Terraform Plan2](Images/Terraform_Plan2.jpg)  
+   ![Terraform Plan3](Images/Terraform_Plan3.jpg)  
+   ![Terraform Plan4](Images/Terraform_Plan4.jpg)  
+   ![Terraform Plan5](Images/Terraform_Plan5.jpg)
+
+3. **Terraform Apply**  
+   ![Terraform Apply1](Images/Terraform_Apply1.jpg)  
+   ![Terraform Apply2](Images/Terraform_Apply2.jpg)
+
+When Terraform finishes, it outputs the bastion’s public IP and the private IPs of the 6 EC2 instances.
 
 ---
 
-### 2. Set Execute Permissions on Scripts
+### 4.3 Ansible Playbook Execution
 
-Before running any scripts, make sure they have executable permissions:
+After Terraform completes, the script automatically:
 
-```bash
-chmod +x build_ami.sh deploy_infra.sh deploy.sh
-chmod +x scripts/*.sh
-```
+1. **Copies** your `.env` file to the bastion
+2. **Installs Git & Ansible** on the bastion
+3. **Runs** the Ansible playbook (`playbook.yml`) against all 6 private EC2s
 
----
+#### Ansible Steps
 
-### 3. Build the AMI with Packer
+1. **Installing Ansible on Bastion**  
+   ![Installing Ansible Host](Images/Installing_Ansible_Host.jpg)
 
-You can run the full deployment with a single command:
+2. **Starting the Ansible Play & Updating Packages**  
+   ![Starting Ansible Play](Images/Starting_Ansible_PlayandUpdate_Packages_EC2s.jpg)
 
-```bash
-./deploy.sh
-```
+3. **Installing Docker on EC2**  
+   ![Install Docker EC2](Images/Install_Docker_EC2.jpg)
 
-- **OR** run the steps separately:
-  1. `./build_ami.sh` – Builds the custom AMI with Packer and saves the AMI ID to `ami_id.txt`, plus your IP to `my_ip.txt`.
-  2. `./deploy_infra.sh` – Deploys the Terraform infrastructure using those values and runs the SSH test.
+4. **Verifying Docker & Disk Usage**  
+   ![Disk Usage EC2s](Images/Disk_Usage_EC2s.jpg)
 
-#### Packer Build Screenshots
+5. **Recap of the Ansible Run**  
+   ![Ansible Play Recap](Images/Ansible_Play_\ Recap.jpg)
 
-- **Packer1.jpg** – Shows the beginning of the Packer build, validating the source AMI, creating temporary resources, etc.  
-  ![Packer Build 1](Images/Packer1.jpg)
-
-- **Packer2.jpg** – Shows a successful completion of the Packer build, including the final AMI ID.  
-  ![Packer Build 2](Images/Packer2.jpg)
+You should see a summary showing each of the 6 private instances has updated packages, Docker installed, and disk usage displayed.
 
 ---
 
-### 4. Initialize and Plan Terraform
+## 5. AWS Console Verification
 
-When you run `./deploy_infra.sh` (or just `./deploy.sh`), Terraform will:
-1. **Initialize** (`terraform init`) – downloads necessary providers.  
-2. **Plan** (`terraform plan`) – shows the resources that will be created.  
-3. **Apply** (`terraform apply -auto-approve`) – creates the VPC, subnets, NAT gateway, bastion, and private instances using your newly built AMI.
+You can verify in the AWS console that:
 
-#### Terraform Screenshots
+1. **All Instances**: 1 Bastion + 6 Private  
+   ![All Instances](Images/All_Instances.jpg)
 
-- **TerraInit1.jpg** – Example of Terraform initialization.  
-  ![Terraform Init](Images/TerraInit1.jpg)
+2. **Security Groups** created by Terraform  
+   ![Security Groups](Images/Security_Groups.jpg)
 
-- **TerraPlan1.jpg**, **TerraPlan2.jpg**, **TerraPlan3.jpg**, **TerraPlan4.jpg** – Examples of Terraform plan output, listing resources to create.  
-  ![Terraform Plan 1](Images/TerraPlan1.jpg)  
-  ![Terraform Plan 2](Images/TerraPlan2.jpg)  
-  ![Terraform Plan 3](Images/TerraPlan3.jpg)  
-  ![Terraform Plan 4](Images/TerraPlan4.jpg)
+3. **Elastic IP** assigned to the Bastion  
+   ![Elastic IP](Images/Elastic_IP.jpg)
 
-- **TerraApply1.jpg** – Example of Terraform apply output, confirming successful creation of resources.  
-  ![Terraform Apply 1](Images/TerraApply1.jpg)
+4. **Volumes** for each EC2  
+   ![Volumes](Images/Volumes.jpg)
+
+5. **Key Download Help** (if you needed guidance from AWS Academy)  
+   ![Key Help](Images/Key_help.jpg)
 
 ---
 
-### 5. Inspecting Outputs
+## 6. Destroying Resources
 
-When Terraform finishes, it prints out various outputs:
-
-- **Bastion Public IP**  
-- **Private Instance IPs**  
-- **VPC ID**  
-- **SSH Commands** (for convenience)
-
-These help you verify the environment is set up as intended.
-
-Some sample output might look like:
-
-```
-bastion_public_ip = "XX.XX.XX.XX"
-private_instance_ips = [
-  "10.0.3.116",
-  "10.0.4.60",
-  ...
-]
-```
-
----
-
-### 6. Testing SSH Connectivity
-
-After deployment, you can run the test script to verify connectivity:
-
-```bash
-./scripts/test.sh
-```
-
-This script:
-1. Uses the **generated SSH key** in `.ssh/id_rsa` (created during Packer build).  
-2. Attempts an SSH connection to the **bastion** host.  
-3. Proxy-jumps to each private instance to confirm connectivity.
-
-- **Tests.jpg** – shows the script output verifying successful SSH connections.  
-  ![Tests Output](Images/Tests.jpg)
-
-If you see `Operation timed out` or `Permission denied`, ensure:
-- The **Security Group** inbound rule for SSH matches your current public IP.  
-- Your local `.ssh/id_rsa` file has `chmod 600`.  
-- The instance is running and has the public IP you expect.
-
----
-
-Here's the updated section for viewing AWS resources on the dashboard:
-
-### 6. View AWS Resources on Dashboard
-
-* **Output1.jpg** – Shows the EC2 instances (bastion and private instances) created in AWS Management Console.  
-  ![EC2 Instances](Images/Output1.jpg)
-
-* **Output2.jpg** – Shows the Elastic IP Address allocated for the Bastion host.  
-  ![Elastic IP](Images/Output2.jpg)
-
-* **Output3.jpg** – Shows the EBS Volumes attached to the instances.  
-  ![Volumes](Images/Output3.jpg)
-
-* **Output4.jpg** – Shows the Snapshots created during the deployment process.  
-  ![Snapshots](Images/Output4.jpg)
-
-* **Output7.jpg** – Shows the custom AMI built with Packer that contains Docker.  
-  ![Custom AMI](Images/Output7.jpg)
-
-These images provide visual confirmation that our resources were successfully deployed in the AWS environment.
----
-
-### 7. Destroying Resources
-
-When you're finished, run:
+To **avoid incurring costs**, you can remove all AWS resources by running:
 
 ```bash
 ./scripts/destroy.sh
 ```
 
-This script does the following:
-1. Reads the **packer.log** to re-discover the AMI ID (in case you need it).  
-2. Gets your current IP.  
-3. Calls `terraform destroy -auto-approve` with those values.  
-4. Tears down all AWS resources created by Terraform: the VPC, bastion, private EC2 instances, NAT gateway, etc.
+Make sure you run this from the project root so relative paths work correctly. This will:
+
+1. Source the `.env` file
+2. Execute `terraform destroy -auto-approve`
+3. Tear down all your AWS infrastructure (VPC, EC2s, NAT, etc.)
 
 ---
 
-## Troubleshooting Tips
+## 7. Conclusion
 
-1. **Changing Public IP** – If your ISP assigns a new IP, you may need to update the bastion's security group rule or re-run with the new IP.   
-2. **Packer / Terraform Credentials** – Double-check your `.env` file. If Terraform complains about missing credentials, rename your env vars to `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, etc.
+### Summary of What You Get
+
+- **7 EC2 Instances** total:
+  - **1 Bastion Host** (Ansible Controller)
+  - **6 Private Instances** (3 Ubuntu + 3 Amazon Linux)  
+- **Docker** installed & running on all 6 private instances
+- **Disk usage** & **Docker version** verified via Ansible
+- **Security** via private subnets & minimal Bastion exposure
+
+This setup demonstrates a fully automated pipeline:
+1. **Terraform** for provisioning core AWS infrastructure
+2. **Ansible** for remote configuration management
 
 ---
 
-## Conclusion
+**Thank you for checking out this project!** Feel free to customize the code, adjust AMI IDs, or modify instance types for your own AWS environment. If you have any questions or improvements, please submit a pull request or open an issue.
 
-By following these steps:
-
-1. **Build** a Docker-ready AMI with Packer,  
-2. **Deploy** your AWS environment with Terraform,  
-3. **Test** SSH connectivity to your bastion and private instances,  
-4. **Tear down** resources with a single script when we're done,
-
-we can quickly create a secure, repeatable infrastructure. The included screenshots in the **Images** folder provide a visual reference for each step.
+Enjoy your automated AWS environment!
