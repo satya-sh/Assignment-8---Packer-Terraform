@@ -6,7 +6,8 @@
 log_message() {
   local level=$1
   local message=$2
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')] [${level}] ${message}"
+  # Send logs to stderr:
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] [${level}] ${message}" >&2
 }
 
 # Check if a command exists
