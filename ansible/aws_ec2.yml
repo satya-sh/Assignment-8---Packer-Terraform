@@ -4,6 +4,8 @@ regions:
 filters:
   instance-state-name: running
   "tag:Name": "Private Instance*"
+compose:
+  ansible_ssh_user: "{{ 'ubuntu' if tags.OS == 'ubuntu' else 'ec2-user' }}"
 keyed_groups:
   - key: tags.OS
     prefix: "os"

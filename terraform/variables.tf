@@ -75,9 +75,3 @@ variable "num_private_instances" {
   type        = number
   default     = 6
 }
-
-variable "key_name" {
-  description = "Name of the key pair to use for instances"
-  type        = string
-  default     = "vockey"
-}

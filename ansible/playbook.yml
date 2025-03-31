@@ -3,21 +3,66 @@
   hosts: aws_ec2
   become: yes
   gather_facts: yes
-  
-  pre_tasks:
-    - name: Set OS-specific variables
-      set_fact:
-        ansible_ssh_user: "{{ 'ubuntu' if tags.OS == 'ubuntu' else 'ec2-user' }}"
-      
-  roles:
-    - system_updates
-    - docker
 
   tasks:
+    - name: Update package cache (Debian/Ubuntu)
+      apt:
+        update_cache: yes
+        upgrade: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Update packages (RedHat/Amazon Linux)
+      yum:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "RedHat"
+    
+    # Docker installation for Debian/Ubuntu
+    - name: Add Docker repository key (Ubuntu)
+      ansible.builtin.apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Add Docker repository (Ubuntu)
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install Docker CE (Ubuntu)
+      apt:
+        name: docker-ce
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    # Docker installation for Amazon Linux
+    - name: Install Docker (Amazon Linux)
+      yum:
+        name: docker
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Start and enable Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Check Docker version
+      command: docker --version
+      register: docker_version
+      ignore_errors: yes
+
+    - name: Display Docker version
+      debug:
+        msg: "Docker version: {{ docker_version.stdout | default('Docker not installed or error') }}"
+
     - name: Report disk usage
       command: df -h
       register: disk_usage
-      
+
     - name: Show disk usage
       debug:
         var: disk_usage.stdout_lines
