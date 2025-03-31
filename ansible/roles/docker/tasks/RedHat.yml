@@ -1,0 +1,5 @@
+---
+- name: Install Docker (Amazon Linux)
+  yum:
+    name: docker
+    state: present
