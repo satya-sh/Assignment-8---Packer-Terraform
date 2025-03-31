@@ -1,7 +1,3 @@
-Below is a **comprehensive README.md** that references **every screenshot** you listed. Adjust any file paths or screenshot names if they differ in your actual directory structure.
-
----
-
 # AWS Infrastructure with Custom AMI and Terraform Provisioning
 
 This repository provides a complete end-to-end demonstration of creating AWS infrastructure via **Terraform** and then configuring EC2 instances using **Ansible**. The infrastructure comprises:
@@ -77,24 +73,23 @@ After infrastructure creation, Ansible:
 │   ├── variables.tf
 │   └── versions.tf
 ├── run_now.sh
-├── labsuser.pem  (not typically committed)
-├── .env          (not typically committed)
+├── labsuser.pem  (not committed)
+├── .env          (not committed)
 └── README.md      (this file)
 ```
 
 > **Note**:  
-> - The `.env` file holds your AWS credentials and path to your SSH key.  
-> - `labsuser.pem` is your private key for SSH (do **not** commit it).  
+> - The `.env` file holds AWS credentials and path to  SSH key.  
+> - `labsuser.pem` is  private key for SSH.  
 > - The screenshots shown above reside in the `Images` folder.
 
 ---
 
 ## 3. Prerequisites
 
-1. **AWS Credentials** (Access Key, Secret Key, Session Token if required)  
+1. **AWS Credentials** (Access Key, Secret Key, Session Token)  
 2. **Terraform** (v1.3+ recommended)  
 3. **SSH Key** (`labsuser.pem`) with correct permissions (e.g., `chmod 400 labsuser.pem`)  
-4. **(Optional) Ansible** installed locally if you’d like, but the scripts will install Ansible on the bastion host automatically.
 
 ---
 
@@ -102,11 +97,7 @@ After infrastructure creation, Ansible:
 
 ### 4.1 Create and Source Your `.env` File
 
-1. **Clone** this repository (switch to your assignment branch if needed):
-   ```bash
-   git clone -b assignment10 https://github.com/<YOUR_USERNAME>/<YOUR_REPO>.git
-   cd <YOUR_REPO>
-   ```
+1. **Clone** this repository and switch to assignment10 branch:
 
 2. **Create a `.env`** file in the root folder with your AWS credentials and the path to your SSH key:
 
@@ -114,12 +105,12 @@ After infrastructure creation, Ansible:
    # .env
    export AWS_ACCESS_KEY="YOUR_ACCESS_KEY"
    export AWS_SECRET_KEY="YOUR_SECRET_KEY"
-   export AWS_SESSION_TOKEN="YOUR_SESSION_TOKEN"   # If applicable
+   export AWS_SESSION_TOKEN="YOUR_SESSION_TOKEN"
    export AWS_REGION="us-east-1"
    export SSH_KEY_PATH="/absolute/path/to/labsuser.pem"
    ```
 
-3. **Make scripts executable** (on Linux/macOS):
+3. **Make scripts executable**:
    ```bash
    chmod +x run_now.sh
    chmod +x scripts/*.sh
@@ -182,7 +173,7 @@ After Terraform completes, the script automatically:
    ![Disk Usage EC2s](Images/Disk_Usage_EC2s.jpg)
 
 5. **Recap of the Ansible Run**  
-   ![Ansible Play Recap](Images/Ansible_Play_\ Recap.jpg)
+   ![Ansible Play Recap](Images/Ansible_Play_Recap.jpg)
 
 You should see a summary showing each of the 6 private instances has updated packages, Docker installed, and disk usage displayed.
 
@@ -204,7 +195,7 @@ You can verify in the AWS console that:
 4. **Volumes** for each EC2  
    ![Volumes](Images/Volumes.jpg)
 
-5. **Key Download Help** (if you needed guidance from AWS Academy)  
+5. **Key Download Help** (in Details tab when you start AWS Academy)  
    ![Key Help](Images/Key_help.jpg)
 
 ---
@@ -239,9 +230,3 @@ Make sure you run this from the project root so relative paths work correctly. T
 This setup demonstrates a fully automated pipeline:
 1. **Terraform** for provisioning core AWS infrastructure
 2. **Ansible** for remote configuration management
-
----
-
-**Thank you for checking out this project!** Feel free to customize the code, adjust AMI IDs, or modify instance types for your own AWS environment. If you have any questions or improvements, please submit a pull request or open an issue.
-
-Enjoy your automated AWS environment!
