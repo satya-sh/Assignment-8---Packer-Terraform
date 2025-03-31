@@ -10,27 +10,45 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-# Determine the root directory
-ROOT_DIR=$(dirname "$(dirname "$(readlink -f "$0")")")
-SCRIPTS_DIR="${ROOT_DIR}/scripts"
+# Get the bastion IP parameter
 BASTION_IP="$1"
 
-# Source common functions
-source "${SCRIPTS_DIR}/common_functions.sh"
+# Strip any stray whitespace/newlines from $BASTION_IP
+BASTION_IP="$(echo "$BASTION_IP" | tr -d '[:space:]')"
 
-# Load environment variables
-if ! load_env "${ROOT_DIR}/.env"; then
-  exit 1
+# Debug output to detect hidden characters
+echo "DEBUG: BASTION_IP raw input was '$1'"
+echo "DEBUG: BASTION_IP stripped is '$BASTION_IP'"
+echo "DEBUG cat -v output:"
+echo "$BASTION_IP" | cat -v
+echo "-----------"
+
+# Determine the repository's root directory
+ROOT_DIR=$(dirname "$(dirname "$(readlink -f "$0")")")
+SSH_KEY_PATH="${SSH_KEY_PATH:-$HOME/.ssh/id_rsa}"
+
+# Load environment variables if .env exists
+if [ -f "${ROOT_DIR}/.env" ]; then
+  source "${ROOT_DIR}/.env"
 fi
 
-# Copy environment file to bastion
-log_message "INFO" "Copying .env file to bastion host..."
-scp -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-  "${ROOT_DIR}/.env" "ec2-user@${BASTION_IP}:/home/ec2-user/"
+# Create a simple env file to transfer
+echo "Creating temporary .env file for transfer..."
+cat > /tmp/simple.env << EOF
+# Environment variables for bastion host
+AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+EOF
+
+# Copy environment file to bastion using SCP
+echo "Copying environment file to bastion host..."
+scp -i "${SSH_KEY_PATH}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+  /tmp/simple.env "ec2-user@${BASTION_IP}:.env"
 
 # Configure bastion and run Ansible
-log_message "INFO" "Connecting to bastion host and running Ansible..."
-ssh -A -i "$SSH_KEY_PATH" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+echo "Connecting to bastion host and running Ansible..."
+ssh -A -i "${SSH_KEY_PATH}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
   "ec2-user@${BASTION_IP}" <<'EOF'
 set -e
 
@@ -58,10 +76,10 @@ cd terraform-ec2-builder
 # Make scripts executable
 chmod +x scripts/*
 
-# Install Ansible and run playbook
+# Install Ansible and run the playbook
 cd scripts
 ./install_ansible.sh
 ./run_ansible.sh
 EOF
 
-log_message "SUCCESS" "Bastion host configuration completed successfully."
+echo "Bastion host configuration completed successfully."

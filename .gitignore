@@ -12,3 +12,7 @@ terraform/.terraform/providers/registry.terraform.io/hashicorp/aws/5.92.0/darwin
 .DS_Store.DS_Store
 .DS_Store
 labsuser.pem
+scripts/configure_bastion.sh
+terraform/.terraform.tfstate.lock.info
+terraform/.terraform/providers/registry.terraform.io/hashicorp/aws/5.93.0/darwin_arm64/LICENSE.txt
+terraform/.terraform/providers/registry.terraform.io/hashicorp/aws/5.93.0/darwin_arm64/terraform-provider-aws_v5.93.0_x5
